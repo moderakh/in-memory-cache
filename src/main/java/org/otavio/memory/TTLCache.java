@@ -29,6 +29,9 @@ import java.util.function.Function;
 
 /**
  * A Map implementation that expires based on TTL {@link TTLCache#of(long, TimeUnit)}
+ * This class implements {@link AutoCloseable} once it uses a scheduler service
+ * to clean the cache, the close method will cancel that
+ * scheduler and makes the instance either GG eligible and in an illegal state.
  *
  * @param <K> the key type
  * @param <V> the value type
