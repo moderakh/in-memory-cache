@@ -28,12 +28,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- *A Map implementation that expires based on TTL {@link TTLCache#of(long, TimeUnit)}
+ * A Map implementation that expires based on TTL {@link TTLCache#of(long, TimeUnit)}
+ *
  * @param <K> the key type
  * @param <V> the value type
  */
@@ -42,6 +44,7 @@ public class TTLCache<K, V> implements Map<K, V> {
     private final Map<K, V> store = new ConcurrentHashMap<>();
     private final Map<K, Long> timestamps = new ConcurrentHashMap<>();
     private final long ttl;
+    private final Function<K, V> supplier = null;
 
     private TTLCache(long ttl) {
         this.ttl = ttl;
@@ -51,11 +54,20 @@ public class TTLCache<K, V> implements Map<K, V> {
     public V get(Object key) {
         V value = this.store.get(key);
 
-        if (value != null && checkExpired(key)) {
+        boolean isExpired = isExpired(key, value);
+        boolean hasSupplier = supplier != null;
+        if (isExpired && !hasSupplier) {
             return null;
-        } else {
+        } else if (!isExpired) {
             return value;
+        } else if (hasSupplier) {
+            value = supplier.apply((K) key);
+            if (value != null) {
+                put((K) key, value);
+                return value;
+            }
         }
+        return null;
     }
 
     @Override
@@ -130,31 +142,36 @@ public class TTLCache<K, V> implements Map<K, V> {
     }
 
     private boolean checkExpired(Object key) {
-        if (isExpired(key)) {
+        if (isObsolete(key)) {
             remove(key);
             return true;
         }
         return false;
     }
 
-    private boolean isExpired(Object key) {
+    private boolean isObsolete(Object key) {
         return (System.nanoTime() - timestamps.get(key)) > this.ttl;
+    }
+
+    private boolean isExpired(Object key, V value) {
+        return value != null && checkExpired(key);
     }
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
      * The value is represented by nanoseconds, so any amount lower than one nanosecond will come around to one.
-     * @param value the value
+     *
+     * @param value    the value
      * @param timeUnit the unit
-     * @param <K> the key type
-     * @param <V> the value type
+     * @param <K>      the key type
+     * @param <V>      the value type
      * @return a new {@link TTLCache} instance
-     * @throws NullPointerException when timeUnit is null
+     * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    public static <K,V> Map<K, V> of(long value, TimeUnit timeUnit) {
+    public static <K, V> Map<K, V> of(long value, TimeUnit timeUnit) {
         Objects.requireNonNull(timeUnit, "timeUnit is required");
-        if(value <= 0) {
+        if (value <= 0) {
             throw new IllegalArgumentException("The value to TTL must be greater than zero");
         }
         return new TTLCache<>(timeUnit.toNanos(value));
