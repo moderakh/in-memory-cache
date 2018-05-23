@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
@@ -51,87 +52,42 @@ public interface TTLCache<K, V> extends Map<K, V> {
     V get(Object key);
 
     /**
-     * @param key the key
-     * @return
+     * Creates a {@link Map} that expires values from the TTL defined.
+     * The value is represented by nanoseconds, so any amount lower than one nanosecond will come around to one.
+     * @param value the value
+     * @param timeUnit the unit
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return a new {@link TTLCache} instance
+     * @throws NullPointerException when timeUnit is null
+     * @throws IllegalArgumentException when value is negative or zero
      */
-    V find(K key);
+    static <K,V> Map<K, V> of(long value, TimeUnit timeUnit) {
+        Objects.requireNonNull(timeUnit, "timeUnit is required");
+        if(value <= 0) {
+            throw new IllegalArgumentException("The value to TTL must be greater than zero");
+        }
+        return new DefaultTTLCache<>(timeUnit.toNanos(value), null);
+    }
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
      * The value is represented by nanoseconds, so any amount lower than one nanosecond will come around to one.
-     *
-     * @param value    the value
+     * @param value the value
      * @param timeUnit the unit
-     * @param <K>      the key type
-     * @param <V>      the value type
-     * @return a new {@link DefaultTTLCache} instance
-     * @throws NullPointerException     when timeUnit is null
+     * @param supplier the supplier
+     * @param <K> the key type
+     * @param <V> the value type
+     * @return a new {@link TTLCache} instance
+     * @throws NullPointerException when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K, V> TTLCacheBuilderValue<K, V> of() {
-        return new DefaultTTLCacheBuilder<>();
+    static <K,V> Map<K, V> of(long value, TimeUnit timeUnit, Function<K, V> supplier) {
+        Objects.requireNonNull(timeUnit, "timeUnit is required");
+        if(value <= 0) {
+            throw new IllegalArgumentException("The value to TTL must be greater than zero");
+        }
+        return new DefaultTTLCache<>(timeUnit.toNanos(value), supplier);
     }
-
-    /**
-     * The first step in the builder, it defines the value in TTL.
-     *
-     * @param <K> the key type
-     * @param <V> the value type
-     */
-    interface TTLCacheBuilderValue<K, V> {
-        /**
-         * sets the value of the TTL
-         *
-         * @param value the value
-         * @return a {@link TTLCacheBuilderUnit} instance
-         * @throws IllegalArgumentException when value is negative or zero
-         */
-        TTLCacheBuilderUnit<K, V> value(long value);
-    }
-
-    /**
-     * The second step in the builder, where it defines the time unit
-     *
-     * @param <K> the key type
-     * @param <V> the value type
-     */
-    interface TTLCacheBuilderUnit<K, V> {
-
-        /**
-         * Sets the time unit
-         *
-         * @param unit the time unit
-         * @return a {@link TTLCacheBuilderUnit} instance
-         * @throws NullPointerException when unit is null
-         */
-        TTLCacheBuilderUnit<K, V> unit(TimeUnit unit);
-    }
-
-    /**
-     * The third step in the builder, where it definer either the supplier
-     * that will request when the key was not found or the data is deprecated or construct without the supplier.
-     *
-     * @param <K> the key type
-     * @param <V> the value type
-     */
-    interface TTLCacheBuilderSupplier<K, V> extends TTLCacheBuilder<K, V> {
-        TTLCacheBuilder<K, V> supplier(Function<K, V> supplier);
-    }
-
-    /**
-     * The last step of the builder
-     *
-     * @param <K> the key type
-     * @param <V> the value type
-     */
-    interface TTLCacheBuilder<K, V> {
-        /**
-         * creates a {@link TTLCache} with defined values
-         *
-         * @return a {@link TTLCache} instance
-         */
-        TTLCache<K, V> build();
-    }
-
 
 }

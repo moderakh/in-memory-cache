@@ -28,8 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
@@ -41,8 +39,6 @@ import static java.util.Collections.unmodifiableSet;
  * @param <V> the value type
  */
 final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
-
-    private static final Logger LOGGER = Logger.getLogger(DefaultTTLCache.class.getName());
 
     private final Map<K, V> store = new ConcurrentHashMap<>();
     private final Map<K, Long> timestamps = new ConcurrentHashMap<>();
@@ -56,17 +52,6 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
 
     @Override
     public V get(Object key) {
-        LOGGER.warning("Deprecated method and it does not use cache, to better approach, please use TTLCache#find.");
-        V value = this.store.get(key);
-        if (value != null && checkExpired(key)) {
-            return null;
-        } else {
-            return value;
-        }
-    }
-
-    @Override
-    public V find(K key) {
         V value = this.store.get(key);
 
         boolean isExpired = isExpired(key, value);
@@ -76,9 +61,9 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
         } else if (!isExpired) {
             return value;
         } else if (hasSupplier) {
-            value = supplier.apply(key);
+            value = supplier.apply((K) key);
             if (value != null) {
-                put(key, value);
+                put((K) key, value);
                 return value;
             }
         }
