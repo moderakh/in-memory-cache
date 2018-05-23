@@ -39,37 +39,35 @@ public interface TTLCache<K, V> extends Map<K, V> {
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
      * The value is represented by nanoseconds, so any amount lower than one nanosecond will come around to one.
-     * @param value the value
+     *
+     * @param value    the value
      * @param timeUnit the unit
-     * @param <K> the key type
-     * @param <V> the value type
+     * @param <K>      the key type
+     * @param <V>      the value type
      * @return a new {@link TTLCache} instance
-     * @throws NullPointerException when timeUnit is null
+     * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K,V> Map<K, V> of(long value, TimeUnit timeUnit) {
-        Objects.requireNonNull(timeUnit, "timeUnit is required");
-        if(value <= 0) {
-            throw new IllegalArgumentException("The value to TTL must be greater than zero");
-        }
-        return new DefaultTTLCache<>(timeUnit.toNanos(value), null);
+    static <K, V> Map<K, V> of(long value, TimeUnit timeUnit) {
+        return of(value, timeUnit, null);
     }
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
      * The value is represented by nanoseconds, so any amount lower than one nanosecond will come around to one.
-     * @param value the value
+     *
+     * @param value    the value
      * @param timeUnit the unit
      * @param supplier the supplier
-     * @param <K> the key type
-     * @param <V> the value type
+     * @param <K>      the key type
+     * @param <V>      the value type
      * @return a new {@link TTLCache} instance
-     * @throws NullPointerException when timeUnit is null
+     * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K,V> Map<K, V> of(long value, TimeUnit timeUnit, Function<K, V> supplier) {
+    static <K, V> Map<K, V> of(long value, TimeUnit timeUnit, Function<K, V> supplier) {
         Objects.requireNonNull(timeUnit, "timeUnit is required");
-        if(value <= 0) {
+        if (value <= 0) {
             throw new IllegalArgumentException("The value to TTL must be greater than zero");
         }
         return new DefaultTTLCache<>(timeUnit.toNanos(value), supplier);
