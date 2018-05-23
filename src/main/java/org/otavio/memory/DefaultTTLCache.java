@@ -58,7 +58,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
         boolean hasSupplier = supplier != null;
         if (isExpired && !hasSupplier) {
             return null;
-        } else if (!isExpired) {
+        } else if (Objects.nonNull(value) && !isExpired) {
             return value;
         } else if (hasSupplier) {
             value = supplier.apply((K) key);

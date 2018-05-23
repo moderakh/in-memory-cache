@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -87,6 +88,25 @@ public class TTLCacheTest {
         assertNotNull(map.get("one"));
         TimeUnit.MILLISECONDS.sleep(5L);
         assertNull(map.get("one"));
+    }
+
+    @Test
+    public void shouldUseSupplierWhenGetDoesHaveData() throws InterruptedException {
+        Function<String, Integer> supplier = Integer::valueOf;
+
+        Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
+        assertEquals(Integer.valueOf(1), map.get("1"));
+    }
+
+    @Test
+    public void shouldUseSupplierWhenDataIsExpired() throws InterruptedException{
+        Function<String, Integer> supplier = Integer::valueOf;
+        Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
+        map.put("1", 1_000);
+        assertNotNull(map.get("1"));
+        assertEquals(Integer.valueOf(1_000), map.get("1"));
+        TimeUnit.MILLISECONDS.sleep(5L);
+        assertEquals(Integer.valueOf(1), map.get("1"));
     }
 
     @Test
