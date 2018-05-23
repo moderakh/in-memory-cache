@@ -222,4 +222,13 @@ public class TTLCacheTest {
         assertFalse(map.entrySet().isEmpty());
         assertEquals(1, map.entrySet().size());
     }
+
+    @Test
+    public void shouldCleanWhenScheduled() throws InterruptedException {
+        Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS);
+        map.put("one", 1);
+        map.put("two", 2);
+        TimeUnit.MILLISECONDS.sleep(8L);
+        assertTrue(map.isEmpty());
+    }
 }

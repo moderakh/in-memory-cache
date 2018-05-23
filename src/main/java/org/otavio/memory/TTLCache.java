@@ -70,7 +70,7 @@ public interface TTLCache<K, V> extends Map<K, V> {
         if (value <= 0) {
             throw new IllegalArgumentException("The value to TTL must be greater than zero");
         }
-        return new DefaultTTLCache<>(timeUnit.toNanos(value), supplier);
+        return new DefaultTTLCache<>(value, timeUnit, supplier);
     }
 
 }

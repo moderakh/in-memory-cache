@@ -27,6 +27,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -38,16 +42,21 @@ import static java.util.Collections.unmodifiableSet;
  * @param <K> the key type
  * @param <V> the value type
  */
-final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
+final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
+
+    private static final ScheduledExecutorService SCHEDULED_THREAD_POOL = Executors.newScheduledThreadPool(1);
+
 
     private final Map<K, V> store = new ConcurrentHashMap<>();
     private final Map<K, Long> timestamps = new ConcurrentHashMap<>();
     private final long ttl;
     private final Function<K, V> supplier;
+    private final ScheduledFuture<?> schedule;
 
-    DefaultTTLCache(long ttl, Function<K, V> supplier) {
-        this.ttl = ttl;
+    DefaultTTLCache(long value, TimeUnit unit, Function<K, V> supplier) {
+        this.ttl = unit.toNanos(value);
         this.supplier = supplier;
+        this.schedule = SCHEDULED_THREAD_POOL.schedule(this, value * 2, unit);
     }
 
     @Override
@@ -132,6 +141,14 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
         clearExpired();
         return unmodifiableSet(store.entrySet());
     }
+
+    @Override
+    public void run() {
+        if (!this.isEmpty()) {
+            clearExpired();
+        }
+    }
+
 
     private void clearExpired() {
         store.keySet().stream().forEach(this::checkExpired);
