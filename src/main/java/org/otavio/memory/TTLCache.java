@@ -22,17 +22,10 @@
  */
 package org.otavio.memory;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Supplier;
-
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * A Map implementation that expires based on TTL {@link TTLCache#of(long, TimeUnit)}
@@ -42,14 +35,6 @@ import static java.util.Collections.unmodifiableSet;
  */
 public interface TTLCache<K, V> extends Map<K, V> {
 
-
-    /**
-     * @param key the key as object
-     * @return see {@link Map#get(Object)}
-     * @deprecated unsafe method, please use {@link TTLCache#find(Object)} instead.
-     */
-    @Override
-    V get(Object key);
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
