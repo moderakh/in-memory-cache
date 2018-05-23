@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -46,10 +47,11 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V> {
     private final Map<K, V> store = new ConcurrentHashMap<>();
     private final Map<K, Long> timestamps = new ConcurrentHashMap<>();
     private final long ttl;
-    private final Function<K, V> supplier = null;
+    private final Function<K, V> supplier;
 
-    DefaultTTLCache(long ttl) {
+    DefaultTTLCache(long ttl, Function<K, V> supplier) {
         this.ttl = ttl;
+        this.supplier = supplier;
     }
 
     @Override

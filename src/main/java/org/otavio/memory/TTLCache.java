@@ -51,7 +51,6 @@ public interface TTLCache<K, V> extends Map<K, V> {
     V get(Object key);
 
     /**
-     *
      * @param key the key
      * @return
      */
@@ -69,32 +68,70 @@ public interface TTLCache<K, V> extends Map<K, V> {
      * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K, V> TTLCache<K, V> of(long value, TimeUnit timeUnit) {
-        Objects.requireNonNull(timeUnit, "timeUnit is required");
-        if (value <= 0) {
-            throw new IllegalArgumentException("The value to TTL must be greater than zero");
-        }
-        return new DefaultTTLCache<>(timeUnit.toNanos(value));
+    static <K, V> TTLCacheBuilderValue<K, V> of() {
+        return new DefaultTTLCacheBuilder<>();
     }
 
-    interface TTLCacheBuilderValue {
-        TTLCacheBuilderUnit value(long value);
+    /**
+     * The first step in the builder, it defines the value in TTL.
+     *
+     * @param <K> the key type
+     * @param <V> the value type
+     */
+    interface TTLCacheBuilderValue<K, V> {
+        /**
+         * sets the value of the TTL
+         *
+         * @param value the value
+         * @return a {@link TTLCacheBuilderUnit} instance
+         * @throws IllegalArgumentException when value is negative or zero
+         */
+        TTLCacheBuilderUnit<K, V> value(long value);
     }
 
-    interface TTLCacheBuilderUnit {
+    /**
+     * The second step in the builder, where it defines the time unit
+     *
+     * @param <K> the key type
+     * @param <V> the value type
+     */
+    interface TTLCacheBuilderUnit<K, V> {
 
-        TTLCacheBuilderUnit unit(TimeUnit unit);
+        /**
+         * Sets the time unit
+         *
+         * @param unit the time unit
+         * @return a {@link TTLCacheBuilderUnit} instance
+         * @throws NullPointerException when unit is null
+         */
+        TTLCacheBuilderUnit<K, V> unit(TimeUnit unit);
     }
 
-    interface TTLCacheBuilderSupplier extends TTLCacheBuilder {
-        TTLCache build();
+    /**
+     * The third step in the builder, where it definer either the supplier
+     * that will request when the key was not found or the data is deprecated or construct without the supplier.
+     *
+     * @param <K> the key type
+     * @param <V> the value type
+     */
+    interface TTLCacheBuilderSupplier<K, V> extends TTLCacheBuilder<K, V> {
+        TTLCacheBuilder<K, V> supplier(Function<K, V> supplier);
     }
 
-    interface TTLCacheBuilder {
-        TTLCache build();
+    /**
+     * The last step of the builder
+     *
+     * @param <K> the key type
+     * @param <V> the value type
+     */
+    interface TTLCacheBuilder<K, V> {
+        /**
+         * creates a {@link TTLCache} with defined values
+         *
+         * @return a {@link TTLCache} instance
+         */
+        TTLCache<K, V> build();
     }
-
-
 
 
 }
