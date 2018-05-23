@@ -39,123 +39,23 @@ import static java.util.Collections.unmodifiableSet;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class TTLCache<K, V> implements Map<K, V> {
+public interface TTLCache<K, V> extends Map<K, V> {
 
-    private final Map<K, V> store = new ConcurrentHashMap<>();
-    private final Map<K, Long> timestamps = new ConcurrentHashMap<>();
-    private final long ttl;
-    private final Function<K, V> supplier = null;
 
-    private TTLCache(long ttl) {
-        this.ttl = ttl;
-    }
-
+    /**
+     * @param key the key as object
+     * @return see {@link Map#get(Object)}
+     * @deprecated unsafe method, please use {@link TTLCache#find(Object)} instead.
+     */
     @Override
-    public V get(Object key) {
-        V value = this.store.get(key);
+    V get(Object key);
 
-        boolean isExpired = isExpired(key, value);
-        boolean hasSupplier = supplier != null;
-        if (isExpired && !hasSupplier) {
-            return null;
-        } else if (!isExpired) {
-            return value;
-        } else if (hasSupplier) {
-            value = supplier.apply((K) key);
-            if (value != null) {
-                put((K) key, value);
-                return value;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public V put(K key, V value) {
-        timestamps.put(key, System.nanoTime());
-        return store.put(key, value);
-    }
-
-    @Override
-    public int size() {
-        return store.size();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return store.isEmpty();
-    }
-
-    @Override
-    public boolean containsKey(Object key) {
-        boolean containsKey = store.containsKey(key);
-        return containsKey ? !checkExpired(key) : containsKey;
-    }
-
-    @Override
-    public boolean containsValue(Object value) {
-        return store.containsValue(value);
-    }
-
-    @Override
-    public V remove(Object key) {
-        timestamps.remove(key);
-        return store.remove(key);
-    }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends V> map) {
-        Objects.requireNonNull(map, "map is required");
-        map.entrySet().forEach(this::put);
-    }
-
-    @Override
-    public void clear() {
-        timestamps.clear();
-        store.clear();
-    }
-
-    @Override
-    public Set<K> keySet() {
-        clearExpired();
-        return unmodifiableSet(store.keySet());
-    }
-
-    @Override
-    public Collection<V> values() {
-        clearExpired();
-        return unmodifiableCollection(store.values());
-    }
-
-    @Override
-    public Set<Entry<K, V>> entrySet() {
-        clearExpired();
-        return unmodifiableSet(store.entrySet());
-    }
-
-    private void clearExpired() {
-        store.keySet().stream().forEach(this::checkExpired);
-    }
-
-    private void put(Entry<? extends K, ? extends V> entry) {
-        this.put(entry.getKey(), entry.getValue());
-    }
-
-    private boolean checkExpired(Object key) {
-        if (isObsolete(key)) {
-            remove(key);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isObsolete(Object key) {
-        return (System.nanoTime() - timestamps.get(key)) > this.ttl;
-    }
-
-    private boolean isExpired(Object key, V value) {
-        return value != null && checkExpired(key);
-    }
+    /**
+     *
+     * @param key the key
+     * @return
+     */
+    V find(K key);
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
@@ -165,16 +65,36 @@ public class TTLCache<K, V> implements Map<K, V> {
      * @param timeUnit the unit
      * @param <K>      the key type
      * @param <V>      the value type
-     * @return a new {@link TTLCache} instance
+     * @return a new {@link DefaultTTLCache} instance
      * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    public static <K, V> Map<K, V> of(long value, TimeUnit timeUnit) {
+    static <K, V> TTLCache<K, V> of(long value, TimeUnit timeUnit) {
         Objects.requireNonNull(timeUnit, "timeUnit is required");
         if (value <= 0) {
             throw new IllegalArgumentException("The value to TTL must be greater than zero");
         }
-        return new TTLCache<>(timeUnit.toNanos(value));
+        return new DefaultTTLCache<>(timeUnit.toNanos(value));
     }
+
+    interface TTLCacheBuilderValue {
+        TTLCacheBuilderUnit value(long value);
+    }
+
+    interface TTLCacheBuilderUnit {
+
+        TTLCacheBuilderUnit unit(TimeUnit unit);
+    }
+
+    interface TTLCacheBuilderSupplier extends TTLCacheBuilder {
+        TTLCache build();
+    }
+
+    interface TTLCacheBuilder {
+        TTLCache build();
+    }
+
+
+
 
 }
