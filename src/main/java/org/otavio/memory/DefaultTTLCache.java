@@ -52,6 +52,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     private final long ttl;
     private final Function<K, V> supplier;
     private final ScheduledFuture<?> schedule;
+    private boolean open = true;
 
     DefaultTTLCache(long value, TimeUnit unit, Function<K, V> supplier) {
         this.ttl = unit.toNanos(value);
@@ -61,6 +62,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
 
     @Override
     public V get(Object key) {
+        checkIsOpen();
         V value = this.store.get(key);
 
         boolean isExpired = isExpired(key, value);
@@ -81,71 +83,98 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
 
     @Override
     public V put(K key, V value) {
+        checkIsOpen();
         timestamps.put(key, System.nanoTime());
         return store.put(key, value);
     }
 
     @Override
     public int size() {
+        checkIsOpen();
         return store.size();
     }
 
     @Override
     public boolean isEmpty() {
+        checkIsOpen();
         return store.isEmpty();
     }
 
     @Override
     public boolean containsKey(Object key) {
+        checkIsOpen();
         boolean containsKey = store.containsKey(key);
         return containsKey ? !checkExpired(key) : containsKey;
     }
 
     @Override
     public boolean containsValue(Object value) {
+        checkIsOpen();
         return store.containsValue(value);
     }
 
     @Override
     public V remove(Object key) {
+        checkIsOpen();
         timestamps.remove(key);
         return store.remove(key);
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
+        checkIsOpen();
         Objects.requireNonNull(map, "map is required");
         map.entrySet().forEach(this::put);
     }
 
     @Override
     public void clear() {
+        checkIsOpen();
         timestamps.clear();
         store.clear();
     }
 
     @Override
     public Set<K> keySet() {
+        checkIsOpen();
         clearExpired();
         return unmodifiableSet(store.keySet());
     }
 
     @Override
     public Collection<V> values() {
+        checkIsOpen();
         clearExpired();
         return unmodifiableCollection(store.values());
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
+        checkIsOpen();
         clearExpired();
         return unmodifiableSet(store.entrySet());
     }
 
     @Override
     public void run() {
+        checkIsOpen();
         if (!this.isEmpty()) {
             clearExpired();
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        schedule.cancel(true);
+        this.open = false;
+        this.store.clear();
+        this.timestamps.clear();
+    }
+
+    private void checkIsOpen() {
+        if (!open) {
+            throw new IllegalStateException("This cache is disabled to use, the resource it close" +
+                    " and ready to GC, please create a new one.");
         }
     }
 

@@ -99,7 +99,7 @@ public class TTLCacheTest {
     }
 
     @Test
-    public void shouldUseSupplierWhenDataIsExpired() throws InterruptedException{
+    public void shouldUseSupplierWhenDataIsExpired() throws InterruptedException {
         Function<String, Integer> supplier = Integer::valueOf;
         Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
         map.put("1", 1_000);
@@ -224,11 +224,42 @@ public class TTLCacheTest {
     }
 
     @Test
-    public void shouldCleanWhenScheduled() throws InterruptedException {
+    public void shouldCleanWhenScheduledPass() throws InterruptedException {
         Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS);
         map.put("one", 1);
         map.put("two", 2);
         TimeUnit.MILLISECONDS.sleep(8L);
         assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void shouldRequestFromSupplierWhenCleanScheduledPass() throws InterruptedException {
+        Function<String, Integer> supplier = Integer::valueOf;
+        Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
+        map.put("1", 1000);
+        map.put("2", 2);
+        assertEquals(Integer.valueOf(1_000), map.get("1"));
+        TimeUnit.MILLISECONDS.sleep(8L);
+        assertEquals(Integer.valueOf(1), map.get("1"));
+    }
+
+    @Test
+    public void shouldCloseResource() throws Exception {
+
+        TTLCache<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS);
+        map.close();
+        assertThrows(IllegalStateException.class, () -> {
+            map.size();
+        });
+
+        assertThrows(IllegalStateException.class, () -> {
+            map.isEmpty();
+        });
+
+        assertThrows(IllegalStateException.class, () -> {
+            map.entrySet();
+        });
+
+        TimeUnit.MILLISECONDS.sleep(10L);//make sure that it won't request the method again
     }
 }

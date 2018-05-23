@@ -33,7 +33,8 @@ import java.util.function.Function;
  * @param <K> the key type
  * @param <V> the value type
  */
-public interface TTLCache<K, V> extends Map<K, V> {
+public interface TTLCache<K, V> extends Map<K, V>, AutoCloseable {
+
 
 
     /**
@@ -48,7 +49,7 @@ public interface TTLCache<K, V> extends Map<K, V> {
      * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K, V> Map<K, V> of(long value, TimeUnit timeUnit) {
+    static <K, V> TTLCache<K, V> of(long value, TimeUnit timeUnit) {
         return of(value, timeUnit, null);
     }
 
@@ -65,7 +66,7 @@ public interface TTLCache<K, V> extends Map<K, V> {
      * @throws NullPointerException     when timeUnit is null
      * @throws IllegalArgumentException when value is negative or zero
      */
-    static <K, V> Map<K, V> of(long value, TimeUnit timeUnit, Function<K, V> supplier) {
+    static <K, V> TTLCache<K, V> of(long value, TimeUnit timeUnit, Function<K, V> supplier) {
         Objects.requireNonNull(timeUnit, "timeUnit is required");
         if (value <= 0) {
             throw new IllegalArgumentException("The value to TTL must be greater than zero");
