@@ -8,19 +8,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UserPersistenceUnit implements PersistenceUnit<Long, User> {
+public class DocumentPersistenceUnit implements PersistenceUnit<Long, Document> {
 
-    private static final Function<Long, User> DATABASE_OPERATION = s -> {
+    private static final Function<Long, Document> DATABASE_OPERATION = s -> {
         try {
             TimeUnit.SECONDS.sleep(1L);//database consult
         } catch (Exception exp) {
             exp.printStackTrace();//just to test, ignore it
         }
 
-        return new User("user: " + s);
+        return new Document("user: " + s);
     };
 
-    private static final Function<String , List<User>> DATABASE_QUERY = s -> {
+    private static final Function<String , List<Document>> DATABASE_QUERY = s -> {
         try {
             TimeUnit.SECONDS.sleep(1L);//database consult
         } catch (Exception exp) {
@@ -29,26 +29,26 @@ public class UserPersistenceUnit implements PersistenceUnit<Long, User> {
         Random random = new Random();
         return Stream.generate(random::nextInt)
                 .limit(10)
-                .map(i -> new User(" user:" + i)).collect(Collectors.toList());
+                .map(i -> new Document(" user:" + i)).collect(Collectors.toList());
     };
 
 
-    private final Map<Long, User> cacheById;
+    private final Map<Long, Document> cacheById;
 
-    private final Map<String, List<User>> cacheByQuery;
+    private final Map<String, List<Document>> cacheByQuery;
 
-    public UserPersistenceUnit() {
+    public DocumentPersistenceUnit() {
         this.cacheById = TTLCache.of(10L, TimeUnit.MILLISECONDS, DATABASE_OPERATION);
         this.cacheByQuery = TTLCache.of(10L, TimeUnit.MILLISECONDS, DATABASE_QUERY);
     }
 
     @Override
-    public User findById(Long key) {
+    public Document findById(Long key) {
         return cacheById.get(key);
     }
 
     @Override
-    public User deleteById(Long key) {
+    public Document deleteById(Long key) {
         //remove from database
         cacheById.remove(key);
         cacheByQuery.clear();
@@ -56,7 +56,7 @@ public class UserPersistenceUnit implements PersistenceUnit<Long, User> {
     }
 
     @Override
-    public List<User> query(String query) {
+    public List<Document> query(String query) {
         return null;
     }
 }

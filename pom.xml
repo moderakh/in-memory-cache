@@ -4,7 +4,7 @@
     <groupId>org.otavio</groupId>
     <artifactId>memory</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>In memory</name>
+    <json>In memory</json>
 
     <properties>
         <junit.version>5.0.3</junit.version>
