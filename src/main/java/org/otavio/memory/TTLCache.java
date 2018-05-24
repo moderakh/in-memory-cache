@@ -41,7 +41,7 @@ public interface TTLCache<K, V> extends Map<K, V>, AutoCloseable {
 
 
     /**
-     * Ignores the values in the map and uses the Supplier then load the Map with the latest data.
+     * Ignores the value in the map and uses the Supplier then load the Map with the latest data.
      * @param key the key
      * @return the value from supplier
      * @throws NullPointerException when the key is null
