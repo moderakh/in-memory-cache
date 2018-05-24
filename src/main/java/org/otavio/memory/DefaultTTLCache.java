@@ -61,6 +61,19 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     }
 
     @Override
+    public V getFromSupplier(K key) {
+        Objects.requireNonNull(key, "key is required");
+        if (Objects.isNull(supplier)) {
+            throw new IllegalStateException("This Maps does not have supplier");
+        }
+        V value = supplier.apply(key);
+        if (Objects.nonNull(value)) {
+            put(key, value);
+        }
+        return value;
+    }
+
+    @Override
     public V get(Object key) {
         checkIsOpen();
         V value = this.store.get(key);
