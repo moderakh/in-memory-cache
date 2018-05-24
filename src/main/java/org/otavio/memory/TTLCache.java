@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A Map implementation that expires based on TTL {@link TTLCache#of(long, TimeUnit)}
@@ -38,6 +39,15 @@ import java.util.function.Function;
  */
 public interface TTLCache<K, V> extends Map<K, V>, AutoCloseable {
 
+
+    /**
+     * Ignores the values in the map and uses the Supplier then load the Map with the latest data.
+     * @param key the key
+     * @return the value from supplier
+     * @throws NullPointerException when the key is null
+     * @throws IllegalStateException when the {@link TTLCache} does not have supplier
+     */
+    V getFromSupplier(K key);
 
     /**
      * See {@link Map#get(Object)}
