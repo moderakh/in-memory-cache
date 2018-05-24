@@ -39,6 +39,14 @@ import java.util.function.Function;
 public interface TTLCache<K, V> extends Map<K, V>, AutoCloseable {
 
 
+    /**
+     * See {@link Map#get(Object)}
+     * @param key Map#get(Object)}
+     * @return see Map#get(Object)}
+     * @throws ClassCastException when the parameter key cannot be cast with the K type.
+     */
+    @Override
+    V get(Object key);
 
     /**
      * Creates a {@link Map} that expires values from the TTL defined.
