@@ -91,7 +91,7 @@ public class TTLCacheTest {
     }
 
     @Test
-    public void shouldUseSupplierWhenGetDoesHaveData() throws InterruptedException {
+    public void shouldUseSupplierWhenGetDoesHaveData()  {
         Function<String, Integer> supplier = Integer::valueOf;
 
         Map<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
@@ -261,5 +261,39 @@ public class TTLCacheTest {
         });
 
         TimeUnit.MILLISECONDS.sleep(10L);//make sure that it won't request the method again
+    }
+
+
+    @Test
+    public void shouldReturnErrorWhenGetFromSupplierHasKeyParameterNull() {
+
+        Function<String, Integer> supplier = Integer::valueOf;
+        TTLCache<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
+
+        assertThrows(NullPointerException.class, () -> {
+            map.getFromSupplier(null);
+        });
+    }
+
+    @Test
+    public void shouldReturnErrorWhenGetFromSupplierHasNullSupplier() {
+
+        TTLCache<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS);
+
+        assertThrows(IllegalStateException.class, () -> {
+            map.getFromSupplier("1");
+        });
+    }
+
+    @Test
+    public void shouldGetFromSupplier() {
+
+        Function<String, Integer> supplier = Integer::valueOf;
+        TTLCache<String, Integer> map = TTLCache.of(2, TimeUnit.MILLISECONDS, supplier);
+        map.put("1", 1_000);
+        assertEquals(Integer.valueOf(1_000), map.get("1"));
+        assertEquals(Integer.valueOf(1), map.getFromSupplier("1"));
+        assertEquals(Integer.valueOf(1), map.get("1"));
+
     }
 }
