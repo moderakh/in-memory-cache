@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,6 +34,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
 
@@ -53,6 +55,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     private final Function<K, V> supplier;
     private final ScheduledFuture<?> schedule;
     private boolean open = true;
+    private final Map<K, K> mutex = synchronizedMap(new WeakHashMap<>());
 
     DefaultTTLCache(long value, TimeUnit unit, Function<K, V> supplier) {
         this.ttl = unit.toNanos(value);
@@ -66,7 +69,8 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
         if (Objects.isNull(supplier)) {
             throw new IllegalStateException("This Maps does not have supplier");
         }
-        synchronized (key) {
+        K synchronizedKey = mutex.computeIfAbsent(key, (a) -> key);
+        synchronized (synchronizedKey) {
             V value = supplier.apply(key);
             if (Objects.nonNull(value)) {
                 put(key, value);
