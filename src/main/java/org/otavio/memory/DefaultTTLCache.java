@@ -61,7 +61,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     }
 
     @Override
-    public V getFromSupplier(K key) {
+    public synchronized V getFromSupplier(K key) {
         Objects.requireNonNull(key, "key is required");
         if (Objects.isNull(supplier)) {
             throw new IllegalStateException("This Maps does not have supplier");
@@ -85,10 +85,12 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
         } else if (Objects.nonNull(value) && !isExpired) {
             return value;
         } else if (hasSupplier) {
-            value = supplier.apply((K) key);
-            if (value != null) {
-                put((K) key, value);
-                return value;
+            synchronized (this) {
+                value = supplier.apply((K) key);
+                if (value != null) {
+                    put((K) key, value);
+                    return value;
+                }
             }
         }
         return null;
@@ -143,8 +145,11 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     @Override
     public void clear() {
         checkIsOpen();
-        timestamps.clear();
-        store.clear();
+        synchronized (this) {
+            timestamps.clear();
+            store.clear();
+        }
+
     }
 
     @Override
