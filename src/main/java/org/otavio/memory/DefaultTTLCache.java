@@ -145,8 +145,11 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     @Override
     public void clear() {
         checkIsOpen();
-        timestamps.clear();
-        store.clear();
+        synchronized (this) {
+            timestamps.clear();
+            store.clear();
+        }
+
     }
 
     @Override
