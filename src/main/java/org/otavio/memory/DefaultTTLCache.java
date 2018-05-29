@@ -92,7 +92,8 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
         } else if (Objects.nonNull(value) && !isExpired) {
             return value;
         } else if (hasSupplier) {
-            synchronized (this) {
+            K synchronizedKey = mutex.computeIfAbsent((K) key, (a) -> (K) key);
+            synchronized (synchronizedKey) {
                 value = supplier.apply((K) key);
                 if (value != null) {
                     put((K) key, value);
