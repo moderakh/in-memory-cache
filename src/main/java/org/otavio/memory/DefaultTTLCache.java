@@ -22,6 +22,7 @@
  */
 package org.otavio.memory;
 
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +56,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
     private final Function<K, V> supplier;
     private final ScheduledFuture<?> schedule;
     private boolean open = true;
-    private final Map<K, K> mutex = synchronizedMap(new WeakHashMap<>());
+    private final Map<K, WeakReference<K>> mutex = synchronizedMap(new WeakHashMap<>());
 
     DefaultTTLCache(long value, TimeUnit unit, Function<K, V> supplier) {
         this.ttl = unit.toNanos(value);
@@ -69,7 +70,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
         if (Objects.isNull(supplier)) {
             throw new IllegalStateException("This Maps does not have supplier");
         }
-        K synchronizedKey = mutex.computeIfAbsent(key, (a) -> key);
+        K synchronizedKey = mutex.computeIfAbsent(key, (a) -> new WeakReference<>((K) key)).get();
         synchronized (synchronizedKey) {
             V value = supplier.apply(key);
             if (Objects.nonNull(value)) {
@@ -92,7 +93,7 @@ final class DefaultTTLCache<K, V> implements TTLCache<K, V>, Runnable {
         } else if (Objects.nonNull(value) && !isExpired) {
             return value;
         } else if (hasSupplier) {
-            K synchronizedKey = mutex.computeIfAbsent((K) key, (a) -> (K) key);
+            K synchronizedKey = mutex.computeIfAbsent((K) key, (a) -> new WeakReference<>((K) key)).get();
             synchronized (synchronizedKey) {
                 value = supplier.apply((K) key);
                 if (value != null) {
